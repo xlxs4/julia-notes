@@ -2,7 +2,6 @@
 
 * expr && action_if_true
 * expr || action_if_false
-* 
 
 * ⊆ (issubset())
 
@@ -46,3 +45,149 @@
 * Use UInts or Gandalf's strings if you want to edit strings because unicode
 
 * views??
+
+Assume that you have something like the following:
+Depending on the type of an argument (here y), I want to call a function with every argument staying the same except the one where I pass `y` (`arg_that_differs1`, vs `arg_that_differs2`).
+The thing is that these two arguments (`arg_that_differs1` and `arg_that_differs2`) have different names, so I end up having to essentially repeat almost all of the code.
+Are there ways around this?
+
+```julia
+function myfun(x, y::TypeA)
+    plot(
+        x; 
+        arg_that_differs1 = y
+        arg_that_is_same1 = "foo"
+        arg_that_is_same2 = "bar"
+        ...
+    )
+end
+
+function myfun(x, y::TypeB)
+    plot(
+        x; 
+        arg_that_differs2 = y
+        arg_that_is_same1 = "foo"
+        arg_that_is_same2 = "bar"
+        ...
+    )
+end
+```
+
+The original piece of code was something akin to:
+
+```julia
+function vismetabolism(mappath, reaction_edge_color)
+    function _escherplot!(reaction_edge_color::Symbol)
+        escherplot!(
+            mappath; 
+            reaction_show_text = true,
+            reaction_edge_color = reaction_edge_color,
+            metabolite_show_text = true,
+            metabolite_node_colors = Dict("glc__D_e" => :red),
+            metabolite_node_color = :lightskyblue,
+        )
+
+        return nothing
+    end
+
+    function _escherplot!(reaction_edge_colors::AbstractDict)
+        escherplot!(
+            mappath; 
+            reaction_show_text = true,
+            reaction_edge_colors = reaction_edge_colors,
+            metabolite_show_text = true,
+            metabolite_node_colors = Dict("glc__D_e" => :red),
+            metabolite_node_color = :lightskyblue,
+        )
+
+        return nothing
+    end
+
+    ... # do stuff
+end
+```
+
+---
+
+Attempt 1:
+
+```julia
+function _vismetabolism(mappath; args...)
+    _escherplot!(reaction_edge_color)
+    escherplot!(
+        mappath; 
+        reaction_show_text = true,
+        metabolite_show_text = true,
+        metabolite_node_colors = Dict("glc__D_e" => :red),
+        metabolite_node_color = :lightskyblue,
+        args...,
+    )
+
+    ... # do stuff
+end
+
+function vismetabolism(mappath; reaction_edge_color::Symbol)
+    return _vismetabolism(mappath, reaction_edge_color = reaction_edge_color)
+end
+
+function vismetabolism(mappath; reaction_edge_colors::AbstractDict)
+    return _vismetabolism(mappath, reaction_edge_colors = reaction_edge_colors)
+end
+```
+
+---
+
+Attempt 2:
+
+```julia
+function vismetabolism(mappath, reaction_edge_color::T) where {T<:Union{Symbol, AbstractDict}}
+    insert::Expr
+    if reaction_edge_color isa Symbol
+        insert = :(reaction_edge_color = $reaction_edge_color,)
+    elseif reaction_edge_color isa AbstractDict
+        insert = :(reaction_edge_colors = $reaction_edge_color,)
+    else
+        insert = :()
+    end
+
+    eval(quote
+        escherplot!(
+            mappath;
+            $(insert),
+            reaction_show_text = true,
+            metabolite_show_text = true,
+            metabolite_node_colors = Dict("glc__D_e" => :red),
+            metabolite_node_color = :lightskyblue
+        )
+    end)
+
+    ... # do stuff
+end
+```
+
+---
+
+Attempt 3:
+
+```julia
+function vismetabolism(mappath, reaction_edge_color::T) where {T<:Union{Symbol, AbstractDict}}
+    if T <: Symbol
+        kwargs = (reaction_edge_color = reaction_edge_color,)
+    elseif T <: AbstractDict
+        kwargs = (reaction_edge_colors = reaction_edge_color,)
+    else
+        kwargs = ()
+    end
+
+    escherplot!(
+        mappath;
+        kwargs...,
+        reaction_show_text = true,
+        metabolite_show_text = true,
+        metabolite_node_colors = Dict("glc__D_e" => :red),
+        metabolite_node_color = :lightskyblue
+    )
+
+    ... # do stuff
+end
+```
