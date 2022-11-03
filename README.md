@@ -191,3 +191,7 @@ function vismetabolism(mappath, reaction_edge_color::T) where {T<:Union{Symbol, 
     ... # do stuff
 end
 ```
+
+---
+
+* `show(stdout, "text/plain", x)` to print `x` in it's entirety (e.g. if it's a vector with a lot of elements)
