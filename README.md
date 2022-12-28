@@ -195,3 +195,20 @@ end
 ---
 
 * `show(stdout, "text/plain", x)` to print `x` in it's entirety (e.g. if it's a vector with a lot of elements)
+
+---
+
+So there's a lot of (some very, very good) packages for currying, partial application, functors, lenses, etc.
+If you want to define a partial function apparently you can also simply do:
+```julia
+partial_func = (x) -> other_func(x, y)
+```
+for example:
+```julia
+approx = (x) -> round(x; digits = abs(Int(round(log(10, tol)))))
+```
+
+Of course you can have more than one arguments, e.g.
+```julia
+(a,c) -> f(a,b,c)
+```
