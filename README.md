@@ -212,3 +212,11 @@ Of course you can have more than one arguments, e.g.
 ```julia
 (a,c) -> f(a,b,c)
 ```
+
+---
+
+To have the RNG pull a number from a set other than the default $[1, 0]$, say from the interval `[a, b]`:
+```julia
+using Distributions
+rand(Uniform(a, b))
+```
