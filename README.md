@@ -228,3 +228,16 @@ Supported Pluto Markdown Admonitions:
 - `warning`
 - `info`/`note`/`hint`
 - `correct`/`tip`
+
+---
+
+To make collapsible static content, some HTML:
+
+```julia
+let
+	content = md"""
+	Blah blah blah this is a **bijective function** blah blah `x = Lens({Float64}, m, intra)` blah blah
+	"""
+	HTML("<details><summary><strong>Only for experts!</strong></summary>$(html(content))</details>")
+end
+```
